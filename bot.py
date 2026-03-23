@@ -21,7 +21,7 @@ nest_asyncio.apply()
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # 👉 Replace with your actual bot token from @BotFather
-BOT_TOKEN = "8641510215:AAFlylg3XluHHRjHBPYrqgCno-HH-deBYnI"
+BOT_TOKEN = ""
 
 # 📚 100 PREMIUM ENGLISH MASTERY QUESTIONS
 questions = [
