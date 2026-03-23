@@ -425,7 +425,7 @@ questions = [
         "explanation": "'Incremental' means gradual, step-by-step, and slow. It frustrates those wanting immediate, drastic change."
     },
 
-    # ==================== SECTION 6: READING COMPREHENSION (66-80) ====================
+    # =================== SECTION 6: READING COMPREHENSION (66-80) ====================
     {
         "question": "Reading Comprehension:\n\n'Despite the company's efforts to diversify, its fortunes remained inextricably linked to the volatile oil market.'\n\nWhat does 'inextricably linked' mean in this context?",
         "options": ["A) Completely separated", "B) Unavoidably connected", "C) Temporarily associated", "D) Superficially related"],
