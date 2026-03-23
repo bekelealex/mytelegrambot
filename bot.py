@@ -2,7 +2,7 @@
 """
 Premium English Mastery Telegram Bot
 100 Advanced English Questions with Detailed Explanations
-With Explanation Toggle Feature - COMPLETE VERSION
+AUTO-CLEARING EXPLANATIONS - Clean Chat Experience
 """
 
 import logging
@@ -34,19 +34,16 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 if not BOT_TOKEN:
     logger.error("❌ BOT_TOKEN not found! Please set BOT_TOKEN environment variable.")
-    logger.error("If running locally, create a .env file with BOT_TOKEN=your_token")
     sys.exit(1)
 
 logger.info("✅ Bot token loaded successfully")
 
 # 4. Keep Alive Function for GitHub Actions
 def keep_alive():
-    """Print heartbeat to keep GitHub Actions running"""
     while True:
-        time.sleep(300)  # Every 5 minutes
+        time.sleep(300)
         logger.info("💓 Bot heartbeat - still running")
 
-# Start keep-alive thread
 heartbeat_thread = threading.Thread(target=keep_alive, daemon=True)
 heartbeat_thread.start()
 
@@ -672,24 +669,10 @@ questions = [
 
 # ==================== BOT FUNCTIONS ====================
 
-# Store user progress, scores, and preferences
+# Store user progress and scores
 user_sessions = {}
-user_preferences = {}  # {user_id: {"show_explanations": True/False}}
-
-def get_user_preference(user_id, key, default=True):
-    """Get user preference value"""
-    if user_id not in user_preferences:
-        user_preferences[user_id] = {"show_explanations": True}
-    return user_preferences[user_id].get(key, default)
-
-def set_user_preference(user_id, key, value):
-    """Set user preference value"""
-    if user_id not in user_preferences:
-        user_preferences[user_id] = {"show_explanations": True}
-    user_preferences[user_id][key] = value
 
 def get_level(percentage):
-    """Return the achievement level based on percentage score"""
     if percentage >= 95:
         return ("🏆 GRAND MASTER", "🌟 LEGENDARY! You're in the top 1% of English masters!")
     elif percentage >= 85:
@@ -708,21 +691,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     username = update.effective_user.username or "Unknown"
     
-    # Initialize user session
     user_sessions[user_id] = {"index": 0, "score": 0, "question_count": 0}
     
-    # Initialize preferences if not exists
-    if user_id not in user_preferences:
-        user_preferences[user_id] = {"show_explanations": True}
-    
     logger.info(f"📱 User {username} ({user_id}) started the bot")
-    
-    # Create settings button
-    settings_button = InlineKeyboardMarkup([
-        [InlineKeyboardButton("⚙️ Settings", callback_data="open_settings")]
-    ])
-    
-    show_exp = get_user_preference(user_id, 'show_explanations')
     
     await update.message.reply_text(
         "<b>🏆 PREMIUM ENGLISH MASTERY SUITE</b>\n\n"
@@ -734,173 +705,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "✓ Advanced Vocabulary in Context\n"
         "✓ Reading Comprehension\n"
         "✓ All Tenses Mastery\n\n"
-        f"<b>⚙️ Current Settings:</b>\n"
-        f"• Explanations: {'✅ ON' if show_exp else '❌ OFF'}\n\n"
-        "<b>⭐ Features:</b>\n"
-        "✓ Detailed explanations (can be toggled off)\n"
-        "✓ Progress tracking\n"
-        "✓ Professional-level content\n\n"
-        "<b>🎯 Click Settings to customize your experience!</b>",
-        reply_markup=settings_button,
+        "<b>✨ Auto-Clearing Feature:</b>\n"
+        "✓ Explanations disappear after 3 seconds\n"
+        "✓ Clean, uncluttered chat experience\n"
+        "✓ Focus on learning without distraction\n\n"
+        "<b>🎯 Let's begin!</b>",
         parse_mode="HTML"
     )
     await send_question(update, context)
-
-# ⚙️ Settings menu
-async def show_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show settings menu"""
-    query = update.callback_query
-    user_id = query.from_user.id
-    
-    show_exp = get_user_preference(user_id, 'show_explanations')
-    
-    settings_keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton(
-            f"{'✅' if show_exp else '❌'} Show Explanations", 
-            callback_data="toggle_explanations"
-        )],
-        [InlineKeyboardButton(
-            "📊 View My Stats", 
-            callback_data="view_stats"
-        )],
-        [InlineKeyboardButton(
-            "🔙 Back to Quiz", 
-            callback_data="back_to_quiz"
-        )]
-    ])
-    
-    settings_text = (
-        "<b>⚙️ Settings</b>\n\n"
-        f"<b>Explanations:</b> {'ON - You will see detailed explanations after each answer' if show_exp else 'OFF - You will only see correct/incorrect feedback'}\n\n"
-        "<b>Tips:</b>\n"
-        "• Turn OFF explanations for faster quiz completion\n"
-        "• Turn ON explanations for detailed learning\n"
-        "• You can change this anytime during the quiz\n\n"
-        "<i>Choose your preference below:</i>"
-    )
-    
-    await query.edit_message_text(
-        text=settings_text,
-        reply_markup=settings_keyboard,
-        parse_mode="HTML"
-    )
-    await query.answer()
-
-# 🔄 Toggle explanations
-async def toggle_explanations(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Toggle explanation visibility"""
-    query = update.callback_query
-    user_id = query.from_user.id
-    
-    current = get_user_preference(user_id, 'show_explanations')
-    new_value = not current
-    set_user_preference(user_id, 'show_explanations', new_value)
-    
-    await query.answer(f"Explanations turned {'ON' if new_value else 'OFF'}!")
-    
-    # Refresh settings menu
-    await show_settings(update, context)
-
-# 📊 View user stats
-async def view_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show user statistics"""
-    query = update.callback_query
-    user_id = query.from_user.id
-    
-    session = user_sessions.get(user_id, {"index": 0, "score": 0, "question_count": 0})
-    idx = session["index"]
-    score = session["score"]
-    total_questions = len(questions)
-    
-    if idx > 0:
-        stats_text = (
-            "<b>📊 Your Statistics</b>\n\n"
-            f"📝 Questions Completed: {idx}/{total_questions}\n"
-            f"✅ Correct Answers: {score}\n"
-            f"📈 Current Accuracy: {(score/idx*100):.1f}%\n"
-            f"🎯 Remaining Questions: {total_questions - idx}\n\n"
-            f"⚙️ Explanations: {'ON' if get_user_preference(user_id, 'show_explanations') else 'OFF'}\n\n"
-            "<i>Keep going! You're making progress!</i>"
-        )
-    else:
-        stats_text = (
-            "<b>📊 Your Statistics</b>\n\n"
-            "No questions completed yet!\n"
-            "Start the quiz to see your stats here.\n\n"
-            f"⚙️ Explanations: {'ON' if get_user_preference(user_id, 'show_explanations') else 'OFF'}"
-        )
-    
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back to Settings", callback_data="open_settings")]
-    ])
-    
-    await query.edit_message_text(
-        text=stats_text,
-        reply_markup=keyboard,
-        parse_mode="HTML"
-    )
-    await query.answer()
-
-# 🔙 Back to quiz
-async def back_to_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Return to current question"""
-    query = update.callback_query
-    user_id = query.from_user.id
-    
-    session = user_sessions.get(user_id)
-    
-    if session and session["index"] < len(questions):
-        idx = session["index"]
-        q = questions[idx]
-        
-        keyboard = [[InlineKeyboardButton(opt, callback_data=opt[0])] for opt in q["options"]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        # Dynamic progress bar
-        total_blocks = 10
-        filled_blocks = int((idx / len(questions)) * total_blocks)
-        progress = "█" * filled_blocks + "░" * (total_blocks - filled_blocks)
-        percent_complete = (idx / len(questions)) * 100
-        
-        # Determine category
-        if idx < 15:
-            section = "📖 Reading Completion"
-        elif idx < 25:
-            section = "💬 Modal Conversations"
-        elif idx < 40:
-            section = "🔄 Conditionals"
-        elif idx < 50:
-            section = "🗣️ Reported Speech"
-        elif idx < 65:
-            section = "📚 Advanced Vocabulary"
-        elif idx < 90:
-            section = "📖 Reading Comprehension"
-        else:
-            section = "⏰ Tense Mastery"
-        
-        await query.edit_message_text(
-            text=f"<b>{section}</b>\n"
-                 f"<b>📝 Question {idx + 1}/{len(questions)}</b>\n"
-                 f"<code>[{progress}]</code> <i>{percent_complete:.0f}% Complete</i>\n\n"
-                 f"{q['question']}",
-            reply_markup=reply_markup,
-            parse_mode="HTML"
-        )
-        
-        # Also send settings button as separate message
-        settings_button = InlineKeyboardMarkup([
-            [InlineKeyboardButton("⚙️ Settings", callback_data="open_settings")]
-        ])
-        
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="⚙️ Need to change settings? Click below:",
-            reply_markup=settings_button
-        )
-    else:
-        await query.edit_message_text("Quiz completed! Type /start to begin again!")
-    
-    await query.answer()
 
 # ❓ Send question
 async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -914,13 +726,11 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton(opt, callback_data=opt[0])] for opt in q["options"]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Dynamic progress bar
         total_blocks = 10
         filled_blocks = int((idx / len(questions)) * total_blocks)
         progress = "█" * filled_blocks + "░" * (total_blocks - filled_blocks)
         percent_complete = (idx / len(questions)) * 100
         
-        # Determine category section
         if idx < 15:
             section = "📖 Reading Completion"
         elif idx < 25:
@@ -944,17 +754,6 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
                  f"{q['question']}",
             reply_markup=reply_markup,
             parse_mode="HTML"
-        )
-        
-        # Add settings button as separate message
-        settings_button = InlineKeyboardMarkup([
-            [InlineKeyboardButton("⚙️ Settings", callback_data="open_settings")]
-        ])
-        
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="⚙️ Need to change settings? Click below:",
-            reply_markup=settings_button
         )
     else:
         score = session['score'] if session else 0
@@ -974,27 +773,12 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
 
-# ✅ Handle button clicks with explanation toggle
+# ✅ Handle button clicks with AUTO-CLEARING explanations
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     await query.answer()
     
-    # Handle settings menu callbacks
-    if query.data == "open_settings":
-        await show_settings(update, context)
-        return
-    elif query.data == "toggle_explanations":
-        await toggle_explanations(update, context)
-        return
-    elif query.data == "view_stats":
-        await view_stats(update, context)
-        return
-    elif query.data == "back_to_quiz":
-        await back_to_quiz(update, context)
-        return
-    
-    # Handle quiz answers
     if user_id not in user_sessions:
         return
     
@@ -1007,54 +791,32 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_choice = query.data
     q = questions[idx]
     
-    # Increment question count
     session["question_count"] = session.get("question_count", 0) + 1
     
-    # Get user preference for explanations
-    show_explanations = get_user_preference(user_id, 'show_explanations')
-    
-    # Check if answer is correct
     if user_choice == q["answer"]:
         session["score"] += 1
-        
-        if show_explanations:
-            text = (
-                f"✅ <b>CORRECT!</b> 🎯\n\n"
-                f"<b>📖 Explanation:</b>\n"
-                f"{q['explanation']}\n\n"
-                f"<i>Moving to next question in 3 seconds...</i>"
-            )
-        else:
-            text = (
-                f"✅ <b>CORRECT!</b> 🎯\n\n"
-                f"<i>Great job! Moving to next question in 2 seconds...</i>\n\n"
-                f"<i>💡 Tip: Turn on explanations in Settings to learn more!</i>"
-            )
+        result_text = f"✅ <b>CORRECT!</b> 🎯\n\n"
     else:
         correct_letter = q["answer"]
         correct_text = next(opt for opt in q["options"] if opt.startswith(correct_letter))
-        
-        if show_explanations:
-            text = (
-                f"❌ <b>INCORRECT</b>\n\n"
-                f"<b>✓ Correct Answer:</b> {correct_text}\n\n"
-                f"<b>📖 Explanation:</b>\n"
-                f"{q['explanation']}\n\n"
-                f"<i>Learning from mistakes builds mastery! Next question in 3 seconds...</i>"
-            )
-        else:
-            text = (
-                f"❌ <b>INCORRECT</b>\n\n"
-                f"<b>✓ Correct Answer:</b> {correct_text}\n\n"
-                f"<i>Learning from mistakes builds mastery! Next question in 2 seconds...</i>\n\n"
-                f"<i>💡 Tip: Turn on explanations in Settings to understand why!</i>"
-            )
+        result_text = f"❌ <b>INCORRECT</b>\n\n<b>✓ Correct Answer:</b> {correct_text}\n\n"
     
-    await query.edit_message_text(text=text, parse_mode="HTML")
+    full_text = result_text + f"<b>📖 Explanation:</b>\n{q['explanation']}\n\n<i>⏰ This message will disappear in 3 seconds...</i>"
     
-    # Wait before next question (shorter wait if explanations are off)
-    wait_time = 2 if not show_explanations else 3
-    await asyncio.sleep(wait_time)
+    await query.edit_message_text(
+        text=full_text,
+        parse_mode="HTML"
+    )
+    
+    await asyncio.sleep(3)
+    
+    try:
+        await context.bot.delete_message(
+            chat_id=update.effective_chat.id,
+            message_id=query.message.message_id
+        )
+    except Exception as e:
+        pass
     
     session["index"] += 1
     await send_question(update, context)
@@ -1067,11 +829,9 @@ def main():
     app.add_handler(CallbackQueryHandler(handle_callback))
     
     logger.info("=" * 70)
-    logger.info("🤖 PREMIUM ENGLISH MASTERY BOT - PROFESSIONAL EDITION")
+    logger.info("🤖 PREMIUM ENGLISH MASTERY BOT - AUTO-CLEARING EXPLANATIONS")
     logger.info(f"📚 Total Questions: {len(questions)}")
-    logger.info("🎯 Categories: Reading Completion | Modal Conversations | Conditionals")
-    logger.info("              Reported Speech | Advanced Vocabulary | Reading Comprehension | All Tenses")
-    logger.info("✨ NEW FEATURE: Explanation Toggle - Users can hide/show explanations!")
+    logger.info("✨ FEATURE: Explanations auto-clear after 3 seconds for clean chat!")
     logger.info("=" * 70)
     logger.info("✅ Bot is running and waiting for messages...")
     
@@ -1082,5 +842,4 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         logger.error(f"❌ Bot stopped: {e}")
-        import time
         time.sleep(10)
