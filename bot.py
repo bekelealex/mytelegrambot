@@ -2,6 +2,7 @@
 """
 Premium English Mastery Telegram Bot
 100 Advanced English Questions with Detailed Explanations
+FAST & STABLE - Non-Blocking, Optimized Version
 """
 
 import logging
@@ -33,23 +34,21 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 if not BOT_TOKEN:
     logger.error("❌ BOT_TOKEN not found! Please set BOT_TOKEN environment variable.")
-    logger.error("If running locally, create a .env file with BOT_TOKEN=your_token")
     sys.exit(1)
 
 logger.info("✅ Bot token loaded successfully")
 
 # 4. Keep Alive Function for GitHub Actions
 def keep_alive():
-    """Print heartbeat to keep GitHub Actions running"""
     while True:
-        time.sleep(300)  # Every 5 minutes
+        time.sleep(300)
         logger.info("💓 Bot heartbeat - still running")
 
-# Start keep-alive thread
 heartbeat_thread = threading.Thread(target=keep_alive, daemon=True)
 heartbeat_thread.start()
 
 # ==================== COMPLETE 100 QUESTIONS DATABASE ====================
+
 questions = [
     # ==================== SECTION 1: READING PASSAGE COMPLETION (1-15) ====================
     {
@@ -670,11 +669,9 @@ questions = [
 
 # ==================== BOT FUNCTIONS ====================
 
-# 🧠 Store user progress and scores
 user_sessions = {}
 
 def get_level(percentage):
-    """Return the achievement level based on percentage score"""
     if percentage >= 95:
         return ("🏆 GRAND MASTER", "🌟 LEGENDARY! You're in the top 1% of English masters!")
     elif percentage >= 85:
@@ -688,10 +685,10 @@ def get_level(percentage):
     else:
         return ("🌱 DEVELOPING", "🌟 EVERY MASTER WAS ONCE A BEGINNER! Review and try again!")
 
-# ▶️ Start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     username = update.effective_user.username or "Unknown"
+    
     user_sessions[user_id] = {"index": 0, "score": 0}
     
     logger.info(f"📱 User {username} ({user_id}) started the bot")
@@ -706,16 +703,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "✓ Advanced Vocabulary in Context\n"
         "✓ Reading Comprehension\n"
         "✓ All Tenses Mastery\n\n"
-        "<b>⭐ Features:</b>\n"
-        "✓ Detailed explanations\n"
-        "✓ Progress tracking\n"
-        "✓ Professional-level content\n\n"
-        "<b>🎯 Type /start again anytime to reset!</b>",
+        "<b>✨ Features:</b>\n"
+        "✓ Ultra-fast responses\n"
+        "✓ Explanations auto-clear\n"
+        "✓ Clean chat interface\n\n"
+        "<b>🎯 Let's begin!</b>",
         parse_mode="HTML"
     )
     await send_question(update, context)
 
-# ❓ Send question
 async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     session = user_sessions.get(user_id)
@@ -727,13 +723,11 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton(opt, callback_data=opt[0])] for opt in q["options"]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Dynamic progress bar
         total_blocks = 10
         filled_blocks = int((idx / len(questions)) * total_blocks)
         progress = "█" * filled_blocks + "░" * (total_blocks - filled_blocks)
         percent_complete = (idx / len(questions)) * 100
         
-        # Determine category section for context
         if idx < 15:
             section = "📖 Reading Completion"
         elif idx < 25:
@@ -763,8 +757,6 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         percentage = (score / len(questions)) * 100
         level, feedback_msg = get_level(percentage)
         
-        logger.info(f"📊 User completed quiz! Score: {score}/{len(questions)} ({percentage:.1f}%)")
-        
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=f"<b>🏆 QUIZ COMPLETE!</b>\n\n"
@@ -776,53 +768,64 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
 
-# ✅ Handle button clicks
+# ✅ OPTIMIZED HANDLER - NO BLOCKING, INSTANT RESPONSE
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
+
+    # VERY IMPORTANT: answer instantly (prevents UI freezing)
     await query.answer()
-    
+
     if user_id not in user_sessions:
         return
-    
+
     session = user_sessions[user_id]
     idx = session["index"]
-    
+
     if idx >= len(questions):
         return
-    
+
     user_choice = query.data
     q = questions[idx]
-    
-    # Check if answer is correct
+
+    # Disable buttons immediately (prevents double clicks)
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except:
+        pass
+
+    # Prepare result text
     if user_choice == q["answer"]:
         session["score"] += 1
-        text = (
-            f"✅ <b>CORRECT!</b> 🎯\n\n"
-            f"<b>📖 Explanation:</b>\n"
-            f"{q['explanation']}\n\n"
-            f"<i>Moving to next question in 3 seconds...</i>"
-        )
+        result_text = "✅ <b>CORRECT!</b> 🎯\n\n"
     else:
         correct_letter = q["answer"]
         correct_text = next(opt for opt in q["options"] if opt.startswith(correct_letter))
-        text = (
-            f"❌ <b>INCORRECT</b>\n\n"
-            f"<b>✓ Correct Answer:</b> {correct_text}\n\n"
-            f"<b>📖 Explanation:</b>\n"
-            f"{q['explanation']}\n\n"
-            f"<i>Learning from mistakes builds mastery! Next question in 3 seconds...</i>"
-        )
-    
-    await query.edit_message_text(text=text, parse_mode="HTML")
-    
-    # Wait 3 seconds before next question
-    await asyncio.sleep(3)
-    
+        result_text = f"❌ <b>INCORRECT</b>\n\n<b>✓ Correct Answer:</b> {correct_text}\n\n"
+
+    explanation_text = result_text + f"<b>📖 Explanation:</b>\n{q['explanation']}"
+
+    # Send explanation as NEW message (faster + safer)
+    msg = await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=explanation_text,
+        parse_mode="HTML"
+    )
+
+    # Move to next question immediately (no blocking)
     session["index"] += 1
     await send_question(update, context)
 
-# 🚀 Main function
+    # Delete explanation AFTER delay (non-blocking background task)
+    async def delete_later():
+        await asyncio.sleep(2)
+        try:
+            await msg.delete()
+        except:
+            pass
+
+    asyncio.create_task(delete_later())
+
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     
@@ -830,11 +833,9 @@ def main():
     app.add_handler(CallbackQueryHandler(handle_callback))
     
     logger.info("=" * 70)
-    logger.info("🤖 PREMIUM ENGLISH MASTERY BOT - PROFESSIONAL EDITION")
+    logger.info("🤖 PREMIUM ENGLISH MASTERY BOT - ULTRA FAST & STABLE")
     logger.info(f"📚 Total Questions: {len(questions)}")
-    logger.info("🎯 Categories: Reading Completion | Modal Conversations | Conditionals")
-    logger.info("              Reported Speech | Advanced Vocabulary | Reading Comprehension | All Tenses")
-    logger.info("💡 Features: Detailed explanations | Progress tracking | Level-based feedback")
+    logger.info("✨ OPTIMIZED: Non-blocking handler | Instant responses | Auto-clear explanations")
     logger.info("=" * 70)
     logger.info("✅ Bot is running and waiting for messages...")
     
@@ -845,5 +846,4 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         logger.error(f"❌ Bot stopped: {e}")
-        import time
         time.sleep(10)
