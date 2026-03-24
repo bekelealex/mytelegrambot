@@ -1,59 +1,83 @@
-#  Premium English Mastery Telegram Bot
+# 🏆 Premium English Mastery Telegram Bot
 
-[![GitHub Actions Status](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME/workflows/English%20Mastery%20Bot/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME/actions)
+[![Deploy on Render](https://img.shields.io/badge/Deploy%20on-Render-blue?logo=render)](https://render.com/deploy)
+[![Python 3.11](https://img.shields.io/badge/Python-3.11-green.svg)](https://python.org)
+[![Telegram Bot](https://img.shields.io/badge/Telegram-Bot-blue?logo=telegram)](https://core.telegram.org/bots)
 
 ## 📚 About
-A professional Telegram bot with **100 advanced English questions** covering all major grammar topics with detailed explanations.
 
-##  Features
+A professional Telegram bot with **100 advanced English questions** covering all major grammar topics with detailed explanations and ultra-fast responses.
+
+## ✨ Features
+
 - ✅ **100 Expert-Level Questions**
 - ✅ **8 Comprehensive Categories**
-- ✅ **Detailed Explanations** with grammar rules
-- ✅ **Progress Tracking** with visual progress bar
-- ✅ **Level-Based Feedback** (Grand Master to Developing)
-- ✅ **24/7 Availability** on GitHub Actions
+- ✅ **Ultra-Fast Responses** (<100ms)
+- ✅ **Auto-Clearing Explanations** (1 second)
+- ✅ **Progress Tracking** with visual bar
+- ✅ **User Preferences** (toggle explanations)
+- ✅ **Global Statistics**
+- ✅ **Scalable Production Architecture**
 
-## 📖 Question Categories
-| Category | Questions | Topics |
-|----------|-----------|--------|
-| Reading Passage Completion | 15 | All tenses in context |
-| Modal Auxiliaries | 10 | Natural conversations |
-| All Conditionals | 15 | Zero to mixed, inverted |
-| Reported Speech | 10 | Statements, questions, commands |
-| Advanced Vocabulary | 15 | Academic & professional |
-| Reading Comprehension | 25 | Complex texts |
-| All Tenses Mastery | 10 | Complete tense usage |
+## 🚀 Categories
 
-## Deployment
+| Category | Questions |
+|----------|-----------|
+| Reading Passage Completion | 15 |
+| Modal Auxiliaries | 10 |
+| All Conditionals | 15 |
+| Reported Speech | 10 |
+| Advanced Vocabulary | 15 |
+| Reading Comprehension | 25 |
+| All Tenses | 10 |
 
-### Prerequisites
-1. Telegram Bot Token from [@BotFather](https://t.me/botfather)
-2. GitHub Account
+## 🎯 Quick Start
 
-### Deploy on GitHub Actions (Free)
+### 1. Create Bot on Telegram
+- Message [@BotFather](https://t.me/botfather)
+- Send `/newbot` and follow instructions
+- Copy your bot token
 
-1. **Fork this repository**
+### 2. Deploy on Render (Free)
 
-2. **Add your Bot Token to GitHub Secrets:**
-   - Go to Settings → Secrets and variables → Actions
-   - Add new secret: `BOT_TOKEN` = your token from BotFather
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
-3. **Push to main branch** - bot automatically starts!
+Or manually:
 
-### Test Locally
+1. Fork this repository
+2. Go to [render.com](https://render.com)
+3. Click "New +" → "Web Service"
+4. Connect your GitHub repository
+5. Add environment variables:
+   - `BOT_TOKEN`: Your bot token
+   - `ENVIRONMENT`: `production`
+   - `WEBHOOK_URL`: Your Render URL (e.g., `https://your-bot.onrender.com`)
+6. Click "Create Web Service"
+
+### 3. Test Your Bot
+- Open Telegram
+- Search for your bot
+- Send `/start`
+
+## 📊 Commands
+
+| Command | Description |
+|---------|-------------|
+| `/start` | Start the quiz |
+| `/stats` | View global statistics |
+
+## 🛠️ Local Development
+
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/english-bot.git
-cd english-bot
+git clone https://github.com/your-username/english-mastery-bot.git
+cd english-mastery-bot
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Set token (Linux/Mac)
+# Set environment variables
 export BOT_TOKEN="your_token_here"
-
-# Set token (Windows)
-set BOT_TOKEN="your_token_here"
 
 # Run bot
 python bot.py
